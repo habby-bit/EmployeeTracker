@@ -257,12 +257,9 @@ addRole = () => {
 
                         console.log("\n Sucessfully inserted your new role! \n")
                         askAgain();
-                    }
-                );
-                }
-            );
-
-        })
+                });
+            });
+        });
     });
 };
 
@@ -321,3 +318,108 @@ viewEmployee = () => {
         })
     });
 };
+
+addEmployee = () => {
+    var query1 = 'SELECT * FROM roles';
+    var query2 = 'SELECT first_name, last_name FROM employees WHERE manager_id IS NULL'; 
+
+    connection.query(query1, (err, rolesRes) => {
+        if (err) throw err;
+
+        // const roleChoices = () => {
+        //     console.log("Test")
+        //     const rolArray = rolesRes.map((r) => r.title);
+        //     return rolArray;
+        // }
+
+    connection.query(query2, (err, manRes) => {
+        if (err) throw err;
+
+        inquirer
+        .prompt([
+            {
+                name: 'first_name',
+                message: 'What is their first name?'
+            },
+            {
+                name: 'last_name',
+                message: 'What is their last name?'
+            },
+            {
+                name: 'title',
+                type: 'rawlist',
+                message: 'What is their role?',
+                choices: () => {
+                    const rolArray = rolesRes.map((r) => r.title);
+                    return rolArray;
+                }
+            },
+            {
+                name: 'hasManager',
+                type: 'confirm',
+                message: 'Do they have a manager?'
+            }, 
+                {
+                when: function (response) {
+                  return response.hasManager;
+                },
+                name: 'manager',
+                type: 'rawlist',
+                message: 'Who is their manager?',
+                choices: () => {
+                    function getFullName(e) {
+                        var fullname = [e.first_name, e.last_name].join(" ");
+                        return fullname;
+                    }
+                    return manRes.map(getFullName);
+                }
+                }
+        ])
+        .then(function(answer) {
+            console.log('answer:', answer)
+            if (err) throw err;
+
+            // var query1 = "SELECT id FROM roles WHERE ?";
+            // connection.query (query1, {title: answer.title}, (err, res) => {    
+            //     if (err) throw err;
+            //     let roleId = res[0].id
+
+            //     var query2 = "INSERT INTO roles SET ?";
+            //     connection.query (query2, 
+            //         {
+            //             first_name: answer.first_name,
+            //             last_name: answer.last_name,
+            //             role_id: roleId
+            //         },
+            //         (err, res) => {
+            //             if (err) throw err;
+
+            //             console.log("\n Sucessfully inserted your new role! \n")
+            //             askAgain();
+            //     });
+            // });
+        });
+    });
+    });
+};
+
+const askToAddEmployee = () => {
+    inquirer.prompt([
+         {
+           type: "confirm",
+           name: "choice",
+           message: "Would you like to add an employee?"
+         }
+     ])
+     .then(val => {
+         if (val.choice) {
+             addEmployee();
+         } 
+         else {
+             console.log(employees)
+             console.log("Your team is being created!")
+             render(employees);
+             buildHtml()
+         }
+     });
+ }
