@@ -61,12 +61,12 @@ promptUser = () => {
                 addRole();
                 break;
 
-            case "View a Specific Employee":
-                viewEmployee();
-                break;
-        
             case "View all Employees":
                 viewAllEmployees();
+                break;
+        
+            case "View a Specific Employee":
+                viewEmployee();
                 break;
 
             case "Add an Employee":
@@ -103,9 +103,10 @@ askAgain = () => {
 }
 
 viewAllDepartments = () => {
-    var query = "SELECT departments.department_name, roles.title, roles.salary, employees.first_name, employees.last_name FROM departments JOIN roles ON departments.id = roles.department_id JOIN employees ON roles.id = employees.role_id"
-           
+    var query = "SELECT departments.department_name, roles.title, roles.salary, employees.first_name, employees.last_name FROM departments LEFT JOIN roles ON departments.id = roles.department_id LEFT JOIN employees ON roles.id = employees.role_id";
+
     connection.query(query, (err, res) => {
+        console.log("\n")
         console.table(res);
         askAgain();
     });     
@@ -129,9 +130,10 @@ viewDepartment = () => {
         .then(function(answer) {
             if (err) throw err;
 
-            var query = "SELECT departments.department_name, roles.title, employees.first_name, employees.last_name FROM departments JOIN roles ON departments.id = roles.department_id JOIN employees ON roles.id = employees.role_id WHERE ?"
-           
+            var query = "SELECT departments.department_name, roles.title, roles.salary, employees.first_name, employees.last_name FROM departments LEFT JOIN roles ON departments.id = roles.department_id LEFT JOIN employees ON roles.id = employees.role_id WHERE ?";
+
             connection.query(query, answer, (err, res) => {
+                console.log("\n")
                 console.table(res);
                 askAgain();
             });      
@@ -139,7 +141,6 @@ viewDepartment = () => {
         })
     });
 };
-
 
 addDepartment = () => {
     connection.query('SELECT * FROM departments', (err, res) => {
@@ -159,13 +160,107 @@ addDepartment = () => {
         ])
         .then(function(answer) {
             if (err) throw err;
-            var query = "INSERT INTO products SET ?";
+            var query = "INSERT INTO departments SET ?";
             connection.query (query, answer, (err, res) => {
-                  if (err) throw err;
-                  console.log(res.affectedRows + " product inserted!\n");
-                  updateProduct();
+                    if (err) throw err;
+
+                    console.log("\n Sucessfully inserted your new department! \n")
+                    askAgain();
                 }
               );
+
+        })
+    });
+};
+ 
+viewAllRoles = () => {
+    var query = "SELECT roles.title, departments.department_name, roles.salary, employees.first_name, employees.last_name FROM departments LEFT JOIN roles ON departments.id = roles.department_id LEFT JOIN employees ON roles.id = employees.role_id";
+
+    connection.query(query, (err, res) => {
+        console.log("\n")
+        console.table(res);
+        askAgain();
+    });     
+};
+
+viewRole = () => {
+    connection.query('SELECT * FROM roles', (err, res) => {
+        if (err) throw err;
+        inquirer
+        .prompt([
+            {
+                name: 'title',
+                type: 'rawlist',
+                message: 'What role would you like to view?',
+                choices: () => {
+                    const roleArray = res.map((r) => r.title);
+                    return roleArray;
+                }
+            }
+        ])
+        .then(function(answer) {
+            if (err) throw err;
+
+            var query = "SELECT roles.title, departments.department_name, roles.salary, employees.first_name, employees.last_name FROM departments LEFT JOIN roles ON departments.id = roles.department_id LEFT JOIN employees ON roles.id = employees.role_id WHERE ?";
+
+            connection.query(query, answer, (err, res) => {
+                console.log("\n")
+                console.table(res);
+                askAgain();
+            });      
+
+        })
+    });
+};
+
+addRole = () => {
+    connection.query('SELECT * FROM departments', (err, res) => {
+        if (err) throw err;
+
+        inquirer
+        .prompt([
+            {
+                name: 'department_name',
+                type: 'rawlist',
+                message: 'For what department would you like to add a role?',
+                choices: () => {
+                    const depArray = res.map((r) => r.department_name);
+                    return depArray;
+                }
+            },
+            {
+                name: 'title',
+                message: 'What role would you like to add?'
+            },
+            {
+                name: 'salary',
+                message: 'What is their salary?'
+            }
+        ])
+        .then(function(answer) {
+            if (err) throw err;
+
+            var query1 = "SELECT id FROM departments WHERE ?";
+            connection.query (query1, {department_name: answer.department_name}, (err, res) => {
+                    if (err) throw err;
+                    let depId = res[0].id
+
+                var query2 = "INSERT INTO roles SET ?";
+                connection.query (query2, 
+                    {
+                        title: answer.title,
+                        salary: answer.salary,
+                        department_id: depId
+                    },
+                    (err, res) => {
+                        if (err) throw err;
+
+                        console.log("\n Sucessfully inserted your new role! \n")
+                        askAgain();
+                    }
+                );
+                }
+            );
 
         })
     });
