@@ -174,7 +174,7 @@ addDepartment = () => {
 };
  
 viewAllRoles = () => {
-    var query = "SELECT roles.title, departments.department_name, roles.salary, employees.first_name, employees.last_name FROM departments LEFT JOIN roles ON departments.id = roles.department_id LEFT JOIN employees ON roles.id = employees.role_id";
+    var query = "SELECT roles.title, departments.department_name, roles.salary, employees.first_name, employees.last_name FROM departments JOIN roles ON departments.id = roles.department_id JOIN employees ON roles.id = employees.role_id";
 
     connection.query(query, (err, res) => {
         console.log("\n")
@@ -261,6 +261,62 @@ addRole = () => {
                 );
                 }
             );
+
+        })
+    });
+};
+
+viewAllEmployees = () => {
+    var query = "SELECT employees.first_name, employees.last_name, roles.title, departments.department_name, roles.salary FROM employees LEFT JOIN roles ON employees.role_id = roles.id LEFT JOIN departments ON roles.department_id = departments.id";
+
+    connection.query(query, (err, res) => {
+        console.log("\n")
+        console.table(res);
+        askAgain();
+    });     
+};
+
+viewEmployee = () => {
+    connection.query('SELECT first_name, last_name FROM employees', (err, res) => {
+        if (err) throw err;
+        console.log("res: ", res)
+        inquirer
+        .prompt([
+            {
+                name: 'fullname',
+                type: 'rawlist',
+                message: 'What employee would you like to view?',
+                choices: () => {
+                    function getFullName(e) {
+                        var fullname = [e.first_name,e.last_name].join(" ");
+                        return fullname;
+                    }
+                    return res.map(getFullName);
+                }
+            }
+        ])
+        .then(function(answer) {
+            if (err) throw err;
+
+            var objAnswer = answer.fullname.split(" ");
+
+            var query = "SELECT employees.first_name, employees.last_name, roles.title, departments.department_name, roles.salary FROM employees LEFT JOIN roles ON employees.role_id = roles.id LEFT JOIN departments ON roles.department_id = departments.id WHERE ? AND ?";
+            
+            connection.query(query, 
+                [
+                {
+                    first_name: objAnswer[0]
+                },
+                { 
+                    last_name: objAnswer[1]
+                } 
+                ],
+
+                (err, res) => {
+                    console.log("\n")
+                    console.table(res);
+                    askAgain();
+            });      
 
         })
     });
