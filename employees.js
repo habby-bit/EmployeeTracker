@@ -137,7 +137,6 @@ viewDepartment = () => {
                 console.table(res);
                 askAgain();
             });      
-
         })
     });
 };
@@ -162,13 +161,11 @@ addDepartment = () => {
             if (err) throw err;
             var query = "INSERT INTO departments SET ?";
             connection.query (query, answer, (err, res) => {
-                    if (err) throw err;
+                if (err) throw err;
 
-                    console.log("\n Sucessfully inserted your new department! \n")
-                    askAgain();
-                }
-              );
-
+                console.log("\n Sucessfully inserted your new department! \n")
+                askAgain();
+            });
         })
     });
 };
@@ -208,7 +205,6 @@ viewRole = () => {
                 console.table(res);
                 askAgain();
             });      
-
         })
     });
 };
@@ -276,7 +272,7 @@ viewAllEmployees = () => {
 viewEmployee = () => {
     connection.query('SELECT first_name, last_name FROM employees', (err, res) => {
         if (err) throw err;
-        console.log("res: ", res)
+
         inquirer
         .prompt([
             {
@@ -414,3 +410,88 @@ addEmployee = () => {
     });
     });
 };
+
+updateEmployeeRole = () => {
+
+    connection.query('SELECT title FROM roles', (err, roleRes) => {
+        if (err) throw err;
+
+    var query = 'SELECT first_name, last_name FROM employees';
+    connection.query(query, (err, res) => {
+        if (err) throw err;
+
+        inquirer
+        .prompt([
+            {
+                name: 'fullname',
+                type: 'rawlist',
+                message: 'What employee would you like to view?',
+                choices: () => {
+                    function getFullName(e) {
+                        var fullname = [e.first_name,e.last_name].join(" ");
+                        return fullname;
+                    }
+                    return res.map(getFullName);
+                }
+            },
+            {
+                name: 'title',
+                type: 'rawlist',
+                message: 'What role would you like to give them?',
+                choices: () => {
+                    const roleArray = roleRes.map((r) => r.title);
+                    return roleArray;
+                }
+            }
+        ])
+        .then(function(answer) {
+            if (err) throw err;
+
+            var query1 = "SELECT id FROM roles WHERE ?"
+            connection.query (query1, {title: answer.title}, (err, res) => {
+                if (err) throw err;
+                let roleId = res[0].id
+
+                var objAnswer = answer.fullname.split(" ");
+                var query2 = "SELECT first_name, last_name FROM employees WHERE ?";
+                connection.query (query2,                 
+                    [
+                    {
+                        first_name: objAnswer[0]
+                    },
+                    { 
+                        last_name: objAnswer[1]
+                    } 
+                    ],
+                    (err, res) => {  
+                    console.log('res:', res)
+                    if (err) throw err;
+
+                    var query3 = "UPDATE employees SET ? WHERE ? AND ?";
+                    connection.query (query3, 
+                        [
+                        {
+                            role_id: roleId
+
+                        },
+                        {
+                            first_name: res[0].first_name
+
+                        },
+                        {
+                            first_name: res[0].last_name
+
+                        }
+                        ],
+                        (err, res) => {
+                        if (err) throw err;
+
+                        console.log("\n Sucessfully updated your employees role! \n")
+                        askAgain();
+                    });
+                });
+            });
+        });
+    });
+    });
+}
