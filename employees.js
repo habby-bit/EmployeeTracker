@@ -2,6 +2,7 @@ var mysql = require("mysql");
 var inquirer = require("inquirer");
 var cTable = require("console.table");
 
+// Creating the connection information for the sql database
 var connection = mysql.createConnection({
   host: "localhost",
   port: 3306,
@@ -10,12 +11,15 @@ var connection = mysql.createConnection({
   database: "employeesDB"
 });
 
+
+// Connecting to the mysql server and sql database
 connection.connect(function(err) {
   if (err) throw err;
-  promptUser();
+  askUser();
 });
 
-promptUser = () => {
+// Ask user what they would like to do
+askUser = () => {
     inquirer
     .prompt({
       name: "action",
@@ -84,7 +88,8 @@ promptUser = () => {
     });
 }
 
-askAgain = () => {
+// Ask the user if they'd like to do something else
+anotherAction = () => {
     inquirer.prompt([
         {
            type: "confirm",
@@ -94,7 +99,7 @@ askAgain = () => {
     ])
     .then(val => {
         if (val.choice) {
-            promptUser();
+            askUser();
         } 
         else {
             connection.end();
@@ -102,17 +107,22 @@ askAgain = () => {
     });
 }
 
+// Function to view all departments
 viewAllDepartments = () => {
-    var query = "SELECT departments.department_name, roles.title, roles.salary, employees.first_name, employees.last_name FROM departments LEFT JOIN roles ON departments.id = roles.department_id LEFT JOIN employees ON roles.id = employees.role_id";
 
+    // Running query to view all departments
+    var query = "SELECT departments.id, departments.department_name, roles.title, roles.salary, employees.first_name, employees.last_name FROM departments LEFT JOIN roles ON departments.id = roles.department_id LEFT JOIN employees ON roles.id = employees.role_id ORDER BY departments.id ASC";
     connection.query(query, (err, res) => {
         console.log("\n")
         console.table(res);
-        askAgain();
+        anotherAction();
     });     
 };
 
+// Function to view a specific department
 viewDepartment = () => {
+
+    // Running a query to create department list during user prompts
     connection.query('SELECT * FROM departments', (err, res) => {
         if (err) throw err;
         inquirer
@@ -130,26 +140,30 @@ viewDepartment = () => {
         .then(function(answer) {
             if (err) throw err;
 
-            var query = "SELECT departments.department_name, roles.title, roles.salary, employees.first_name, employees.last_name FROM departments LEFT JOIN roles ON departments.id = roles.department_id LEFT JOIN employees ON roles.id = employees.role_id WHERE ?";
+            // Running query to view the specific department
+            var query = "SELECT departments.id, departments.department_name, roles.title, roles.salary, employees.first_name, employees.last_name FROM departments LEFT JOIN roles ON departments.id = roles.department_id LEFT JOIN employees ON roles.id = employees.role_id WHERE ?";
 
             connection.query(query, answer, (err, res) => {
                 console.log("\n")
                 console.table(res);
-                askAgain();
+                anotherAction();
             });      
         })
     });
 };
 
+// Function to add a new department
 addDepartment = () => {
-    connection.query('SELECT * FROM departments', (err, res) => {
 
-        const depArray = res.map((r) => r.department_name);
-        
+    // Running a query to create department list during user prompts
+    connection.query('SELECT * FROM departments', (err, res) => {
         if (err) throw err;
 
+        // Display current departments to user
+        const depArray = res.map((r) => r.department_name);
         console.log("\nHere are the current departments: " + depArray + "\n")
 
+        // Asking user what department they'd like to add
         inquirer
         .prompt([
             {
@@ -159,28 +173,35 @@ addDepartment = () => {
         ])
         .then(function(answer) {
             if (err) throw err;
+
+            // Running a query to create a new department
             var query = "INSERT INTO departments SET ?";
             connection.query (query, answer, (err, res) => {
                 if (err) throw err;
 
-                console.log("\n Sucessfully inserted your new department! \n")
-                askAgain();
+                console.log("\n Sucessfully added your new department! \n")
+                anotherAction();
             });
         })
     });
 };
  
+// Function to view all roles
 viewAllRoles = () => {
-    var query = "SELECT roles.title, departments.department_name, roles.salary, employees.first_name, employees.last_name FROM departments JOIN roles ON departments.id = roles.department_id JOIN employees ON roles.id = employees.role_id";
 
+    // Running query to view all roles
+    var query = "SELECT roles.id, roles.title, roles.salary, departments.department_name, employees.first_name, employees.last_name FROM departments JOIN roles ON departments.id = roles.department_id JOIN employees ON roles.id = employees.role_id ORDER BY roles.id ASC";
     connection.query(query, (err, res) => {
         console.log("\n")
         console.table(res);
-        askAgain();
+        anotherAction();
     });     
 };
 
+// Function to view a specific role
 viewRole = () => {
+
+    // Running a query to create role list during user prompts
     connection.query('SELECT * FROM roles', (err, res) => {
         if (err) throw err;
         inquirer
@@ -198,18 +219,21 @@ viewRole = () => {
         .then(function(answer) {
             if (err) throw err;
 
-            var query = "SELECT roles.title, departments.department_name, roles.salary, employees.first_name, employees.last_name FROM departments LEFT JOIN roles ON departments.id = roles.department_id LEFT JOIN employees ON roles.id = employees.role_id WHERE ?";
-
+            // Running a query to view a specific role
+            var query = "SELECT roles.id, roles.title, roles.salary, departments.department_name, employees.first_name, employees.last_name FROM departments LEFT JOIN roles ON departments.id = roles.department_id LEFT JOIN employees ON roles.id = employees.role_id WHERE ?";
             connection.query(query, answer, (err, res) => {
                 console.log("\n")
                 console.table(res);
-                askAgain();
+                anotherAction();
             });      
         })
     });
 };
 
+// Function to add a role
 addRole = () => {
+
+    // Running a query to create department list during user prompts
     connection.query('SELECT * FROM departments', (err, res) => {
         if (err) throw err;
 
@@ -236,11 +260,13 @@ addRole = () => {
         .then(function(answer) {
             if (err) throw err;
 
+            // Running query to get the specific department_id
             var query1 = "SELECT id FROM departments WHERE ?";
             connection.query (query1, {department_name: answer.department_name}, (err, res) => {
                     if (err) throw err;
                     let depId = res[0].id
 
+                // Running query to create a new role with the specific department_id
                 var query2 = "INSERT INTO roles SET ?";
                 connection.query (query2, 
                     {
@@ -252,24 +278,29 @@ addRole = () => {
                         if (err) throw err;
 
                         console.log("\n Sucessfully inserted your new role! \n")
-                        askAgain();
+                        anotherAction();
                 });
             });
         });
     });
 };
 
+// Function to view all employees
 viewAllEmployees = () => {
-    var query = "SELECT employees.first_name, employees.last_name, roles.title, departments.department_name, roles.salary FROM employees LEFT JOIN roles ON employees.role_id = roles.id LEFT JOIN departments ON roles.department_id = departments.id";
-
+    
+    // Running query to view all departments
+    var query = "SELECT employees.id, employees.first_name, employees.last_name, roles.title, departments.department_name, roles.salary FROM employees LEFT JOIN roles ON employees.role_id = roles.id LEFT JOIN departments ON roles.department_id = departments.id ORDER BY employees.id ASC";
     connection.query(query, (err, res) => {
         console.log("\n")
         console.table(res);
-        askAgain();
+        anotherAction();
     });     
 };
 
+// Function to view a specific employee
 viewEmployee = () => {
+
+    // Running a query to create employee list during user prompts
     connection.query('SELECT first_name, last_name FROM employees', (err, res) => {
         if (err) throw err;
 
@@ -291,10 +322,11 @@ viewEmployee = () => {
         .then(function(answer) {
             if (err) throw err;
 
+            // Getting the employees name and splitting into first_name and last_name
             var objAnswer = answer.fullname.split(" ");
 
-            var query = "SELECT employees.first_name, employees.last_name, roles.title, departments.department_name, roles.salary FROM employees LEFT JOIN roles ON employees.role_id = roles.id LEFT JOIN departments ON roles.department_id = departments.id WHERE ? AND ?";
-            
+            // Running query to view the specific employee
+            var query = "SELECT employees.id, employees.first_name, employees.last_name, roles.title, departments.department_name, roles.salary FROM employees LEFT JOIN roles ON employees.role_id = roles.id LEFT JOIN departments ON roles.department_id = departments.id WHERE ? AND ?";
             connection.query(query, 
                 [
                 {
@@ -307,20 +339,23 @@ viewEmployee = () => {
                 (err, res) => {
                     console.log("\n")
                     console.table(res);
-                    askAgain();
+                    anotherAction();
             });      
 
         })
     });
 };
 
+// Function to add an employee
 addEmployee = () => {
-    var query1 = 'SELECT * FROM roles';
-    var query2 = 'SELECT first_name, last_name, manager_id FROM employees WHERE manager_id IS NULL'; 
 
+    // Running a query to create department list during user prompts
+    var query1 = 'SELECT * FROM roles';
     connection.query(query1, (err, rolesRes) => {
         if (err) throw err;
 
+    // Running a query to create manager list during user prompts
+    var query2 = 'SELECT first_name, last_name, manager_id FROM employees WHERE manager_id IS NULL'; 
     connection.query(query2, (err, manRes) => {
         if (err) throw err;
 
@@ -368,12 +403,16 @@ addEmployee = () => {
             console.log('answer:', answer)
             if (err) throw err;
 
+            // Running query to get the specific role id
             var query1 = "SELECT id FROM roles WHERE ?";
             connection.query (query1, {title: answer.title}, (err, res) => {    
                 if (err) throw err;
                 let roleId = res[0].id
 
+                // Getting the employees name and splitting intofirst_name and last_name
                 var objAnswer = answer.manager.split(" ");
+
+                // Running query to get the specific employee id
                 var query2 = "SELECT id FROM employees WHERE ?";
                 connection.query (query2,                    [
                     {
@@ -388,6 +427,7 @@ addEmployee = () => {
 
                     let managerId = res[0].id
 
+                    // Running query to create a new employee with the specific role_id and manager_id
                     var query3 = "INSERT INTO employees SET ?";
                     connection.query (query3, 
                         [
@@ -402,7 +442,7 @@ addEmployee = () => {
                             if (err) throw err;
 
                             console.log("\n Sucessfully inserted your new employee! \n")
-                            askAgain();
+                            anotherAction();
                     });
                 });
             });
@@ -411,11 +451,14 @@ addEmployee = () => {
     });
 };
 
+// Function to update an employee role
 updateEmployeeRole = () => {
 
+    // Running a query to create roles list during user prompts
     connection.query('SELECT title FROM roles', (err, roleRes) => {
         if (err) throw err;
 
+    // Running a query to create employee list during user prompts
     var query = 'SELECT first_name, last_name FROM employees';
     connection.query(query, (err, res) => {
         if (err) throw err;
@@ -447,12 +490,16 @@ updateEmployeeRole = () => {
         .then(function(answer) {
             if (err) throw err;
 
+            // Running query to get the specific role_id
             var query1 = "SELECT id FROM roles WHERE ?"
             connection.query (query1, {title: answer.title}, (err, res) => {
                 if (err) throw err;
                 let roleId = res[0].id
 
+                // Getting the employees name and splitting into first_name and last_name
                 var objAnswer = answer.fullname.split(" ");
+
+                // Running query to get the specific employee
                 var query2 = "SELECT first_name, last_name FROM employees WHERE ?";
                 connection.query (query2,                 
                     [
@@ -467,6 +514,7 @@ updateEmployeeRole = () => {
                     console.log('res:', res)
                     if (err) throw err;
 
+                    // Running query to update the role of the specific employee
                     var query3 = "UPDATE employees SET ? WHERE ? AND ?";
                     connection.query (query3, 
                         [
@@ -487,7 +535,7 @@ updateEmployeeRole = () => {
                         if (err) throw err;
 
                         console.log("\n Sucessfully updated your employees role! \n")
-                        askAgain();
+                        anotherAction();
                     });
                 });
             });
