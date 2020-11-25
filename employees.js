@@ -190,7 +190,7 @@ addDepartment = () => {
 viewAllRoles = () => {
 
     // Running query to view all roles
-    var query = "SELECT roles.id, roles.title, roles.salary, departments.department_name, employees.first_name, employees.last_name FROM departments JOIN roles ON departments.id = roles.department_id JOIN employees ON roles.id = employees.role_id ORDER BY roles.id ASC";
+    var query = "SELECT roles.id, roles.title, roles.salary, departments.department_name, employees.first_name, employees.last_name FROM roles LEFT JOIN departments ON departments.id = roles.department_id LEFT JOIN employees ON roles.id = employees.role_id ORDER BY roles.id ASC";
     connection.query(query, (err, res) => {
         console.log("\n")
         console.table(res);
@@ -379,28 +379,19 @@ addEmployee = () => {
                 }
             },
             {
-                name: 'hasManager',
-                type: 'confirm',
-                message: 'Do they have a manager?'
-            }, 
-                {
-                    when: function (response) {
-                    return response.hasManager;
-                },
-                    name: 'manager',
-                    type: 'rawlist',
-                    message: 'Who is their manager?',
-                    choices: () => {
-                        function getFullName(e) {
-                            var fullname = [e.first_name, e.last_name].join(" ");
-                            return fullname;
-                        }
-                        return manRes.map(getFullName);
+                name: 'manager',
+                type: 'rawlist',
+                message: 'Who is their manager?',
+                choices: () => {
+                    function getFullName(e) {
+                        var fullname = [e.first_name, e.last_name].join(" ");
+                        return fullname;
                     }
+                    return manRes.map(getFullName);
                 }
+            }
         ])
         .then(function(answer) {
-            console.log('answer:', answer)
             if (err) throw err;
 
             // Running query to get the specific role id
@@ -409,7 +400,7 @@ addEmployee = () => {
                 if (err) throw err;
                 let roleId = res[0].id
 
-                // Getting the employees name and splitting intofirst_name and last_name
+                // Getting the employees name and splitting into first_name and last_name
                 var objAnswer = answer.manager.split(" ");
 
                 // Running query to get the specific employee id
@@ -511,7 +502,6 @@ updateEmployeeRole = () => {
                     } 
                     ],
                     (err, res) => {  
-                    console.log('res:', res)
                     if (err) throw err;
 
                     // Running query to update the role of the specific employee
@@ -527,7 +517,7 @@ updateEmployeeRole = () => {
 
                         },
                         {
-                            first_name: res[0].last_name
+                            last_name: res[0].last_name
 
                         }
                         ],
