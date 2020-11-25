@@ -2,7 +2,7 @@
 
 ## Description
 
-This is a command-line application that can be used to add and view various departments, roles and employees. It's also possible to update an employees role, say if they were to get a promotion. 
+This is a command-line application that can be used to add and view various departments, roles and employees. It's also possible to update an employee role, say if they were to get a promotion. 
 
 ## Table of Contents
 
@@ -23,7 +23,7 @@ This is a command-line application that can be used to add and view various depa
 
   This is depicted below with an example Employee Database.
 
-  <img src="" alt="ExampleEmployeeDatabase" width="750" height="400" />
+  <img src="https://media.giphy.com/media/vGnW5n1U40nmAS4MLw/giphy.gif" alt="ExampleEmployeeDatabase" width="750" height="400" />
 
   
 ## Questions?
